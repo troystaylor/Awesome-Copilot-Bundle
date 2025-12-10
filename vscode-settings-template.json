@@ -1,0 +1,19 @@
+{
+  "comment": "Awesome Copilot MCP Server Configuration for VS Code Insiders",
+  "comment_instructions": "VS Code stores MCP configuration in the User folder (not settings.json)",
+  "comment_location": "Location: $APPDATA\\Code - Insiders\\User\\mcp.json or $APPDATA\\Code\\User\\mcp.json",
+  
+  "inputs": [],
+  "servers": {
+    "awesome-copilot": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "<PATH_TO_AWESOME_COPILOT_REPO>\\build\\index.js"
+      ]
+    }
+  },
+
+  "comment_note": "Replace <PATH_TO_AWESOME_COPILOT_REPO> with the path where you cloned the awesome-copilot repository",
+  "comment_example": "Example: C:\\Users\\YourUsername\\repos\\awesome-copilot-mcp\\build\\index.js",
+  "comment_node_path": "Node.js path: C:\\Program Files\\nodejs\\node.exe (standard Windows installation)"
+}

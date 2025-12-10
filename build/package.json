@@ -1,0 +1,35 @@
+{
+  "name": "awesome-copilot-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for awesome-copilot bundle - provides searchable access to all Copilot customizations",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mcp",
+    "copilot",
+    "ai",
+    "github",
+    "instructions",
+    "prompts",
+    "agents"
+  ],
+  "author": "awesome-copilot contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/github/awesome-copilot"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "archiver": "^7.0.1"
+  }
+}
