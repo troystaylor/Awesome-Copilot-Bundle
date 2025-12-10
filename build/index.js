@@ -22,9 +22,20 @@ const REPO_ROOT = path.join(__dirname, "..");
 const DIRECTORIES = {
   instructions: path.join(REPO_ROOT, "instructions"),
   prompts: path.join(REPO_ROOT, "prompts"),
-  chatmodes: path.join(REPO_ROOT, "chatmodes"),
+  collections: path.join(REPO_ROOT, "collections"),
   agents: path.join(REPO_ROOT, "agents"),
 };
+
+// Backwards compatibility aliases
+const MODE_ALIASES = {
+  chatmodes: "collections",
+};
+
+const SUPPORTED_EXTENSIONS = [".md", ".yml", ".yaml"];
+
+function resolveMode(mode) {
+  return MODE_ALIASES[mode] || mode;
+}
 
 /**
  * Extract frontmatter from markdown file
@@ -56,6 +67,30 @@ function extractFrontmatter(content) {
   return { frontmatter, content: remainingContent };
 }
 
+function parseMetadata(file, content) {
+  const ext = path.extname(file).toLowerCase();
+
+  if (ext === ".yml" || ext === ".yaml") {
+    const nameMatch = content.match(/^name:\s*(.+)$/m);
+    const descriptionMatch = content.match(/^description:\s*(.+)$/m);
+
+    return {
+      title: nameMatch ? nameMatch[1].trim().replace(/^['"]|['"]$/g, "") : file,
+      description: descriptionMatch ? descriptionMatch[1].trim().replace(/^['"]|['"]$/g, "") : "",
+      mode: undefined,
+    };
+  }
+
+  const { frontmatter } = extractFrontmatter(content);
+  const defaultTitle = file.replace(/\.(instructions|prompt|chatmode|agent|collection)\.(md|ya?ml)$/i, "");
+
+  return {
+    title: frontmatter.title || defaultTitle,
+    description: frontmatter.description || "",
+    mode: frontmatter.mode || undefined,
+  };
+}
+
 /**
  * Search for files in all directories based on keywords
  */
@@ -68,14 +103,15 @@ async function searchInstructions(keywords) {
       const files = await fs.readdir(dirPath);
 
       for (const file of files) {
-        if (!file.endsWith(".md")) continue;
+        const ext = path.extname(file).toLowerCase();
+        if (!SUPPORTED_EXTENSIONS.includes(ext)) continue;
 
         const filePath = path.join(dirPath, file);
         const content = await fs.readFile(filePath, "utf-8");
-        const { frontmatter } = extractFrontmatter(content);
+        const metadata = parseMetadata(file, content);
 
         // Search in filename, description, and content
-        const searchText = `${file} ${frontmatter.description || ""} ${content}`.toLowerCase();
+        const searchText = `${file} ${metadata.description || ""} ${content}`.toLowerCase();
 
         // Check if any search term matches
         const matches = searchTerms.some((term) => searchText.includes(term));
@@ -84,9 +120,9 @@ async function searchInstructions(keywords) {
           results.push({
             type,
             filename: file,
-            title: frontmatter.title || file.replace(/\.(instructions|prompt|chatmode|agent)\.md$/, ""),
-            description: frontmatter.description || "",
-            mode: frontmatter.mode || undefined,
+            title: metadata.title,
+            description: metadata.description,
+            mode: metadata.mode,
           });
         }
       }
@@ -103,10 +139,13 @@ async function searchInstructions(keywords) {
  * Load a specific instruction file
  */
 async function loadInstruction(mode, filename) {
-  const dirPath = DIRECTORIES[mode];
+  const resolvedMode = resolveMode(mode);
+  const dirPath = DIRECTORIES[resolvedMode];
 
   if (!dirPath) {
-    throw new Error(`Invalid mode: ${mode}. Must be one of: instructions, prompts, chatmodes, agents`);
+    throw new Error(
+      `Invalid mode: ${mode}. Must be one of: instructions, prompts, collections (or chatmodes), agents`
+    );
   }
 
   const filePath = path.join(dirPath, filename);
@@ -123,10 +162,13 @@ async function loadInstruction(mode, filename) {
  * Get all available files for a specific mode
  */
 async function listFiles(mode) {
-  const dirPath = DIRECTORIES[mode];
+  const resolvedMode = resolveMode(mode);
+  const dirPath = DIRECTORIES[resolvedMode];
 
   if (!dirPath) {
-    throw new Error(`Invalid mode: ${mode}. Must be one of: instructions, prompts, chatmodes, agents`);
+    throw new Error(
+      `Invalid mode: ${mode}. Must be one of: instructions, prompts, collections (or chatmodes), agents`
+    );
   }
 
   try {
@@ -134,16 +176,17 @@ async function listFiles(mode) {
     const results = [];
 
     for (const file of files) {
-      if (!file.endsWith(".md")) continue;
+      const ext = path.extname(file).toLowerCase();
+      if (!SUPPORTED_EXTENSIONS.includes(ext)) continue;
 
       const filePath = path.join(dirPath, file);
       const content = await fs.readFile(filePath, "utf-8");
-      const { frontmatter } = extractFrontmatter(content);
+      const metadata = parseMetadata(file, content);
 
       results.push({
         filename: file,
-        title: frontmatter.title || file.replace(/\.(instructions|prompt|chatmode|agent)\.md$/, ""),
-        description: frontmatter.description || "",
+        title: metadata.title,
+        description: metadata.description,
       });
     }
 
@@ -174,7 +217,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "search_instructions",
         description:
-          "Search for GitHub Copilot customizations (instructions, prompts, chatmodes, agents) based on keywords. Returns a list of matching items with their type, filename, title, and description.",
+          "Search for GitHub Copilot customizations (instructions, prompts, collections, agents) based on keywords. Returns a list of matching items with their type, filename, title, and description.",
         inputSchema: {
           type: "object",
           properties: {
@@ -189,13 +232,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "load_instruction",
         description:
-          "Load the complete content of a specific instruction, prompt, chatmode, or agent file from the awesome-copilot repository.",
+          "Load the complete content of a specific instruction, prompt, collection, or agent file from the awesome-copilot repository.",
         inputSchema: {
           type: "object",
           properties: {
             mode: {
               type: "string",
-              enum: ["instructions", "prompts", "chatmodes", "agents"],
+              enum: ["instructions", "prompts", "collections", "chatmodes", "agents"],
               description: "The type of content to load",
             },
             filename: {
@@ -209,13 +252,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "list_files",
         description:
-          "List all available files for a specific mode (instructions, prompts, chatmodes, or agents).",
+          "List all available files for a specific mode (instructions, prompts, collections, or agents).",
         inputSchema: {
           type: "object",
           properties: {
             mode: {
               type: "string",
-              enum: ["instructions", "prompts", "chatmodes", "agents"],
+              enum: ["instructions", "prompts", "collections", "chatmodes", "agents"],
               description: "The type of content to list",
             },
           },
@@ -311,20 +354,20 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
           role: "user",
           content: {
             type: "text",
-            text: `Please search all the chatmodes, instructions, prompts, and agents that are related to the search keyword, "${keyword}".
+            text: `Please search all the collections, instructions, prompts, and agents that are related to the search keyword, "${keyword}".
 
 Here's the process to follow:
 
 1. Use the 'awesome-copilot' MCP server.
-2. Search all chatmodes, instructions, prompts, and agents for the keyword provided.
-3. DO NOT load any chatmodes, instructions, prompts, or agents from the MCP server until the user asks to do so.
-4. Scan local chatmodes, instructions, prompts, and agents markdown files in .github/chatmodes, .github/instructions, .github/prompts, and .github/agents directories respectively.
-5. Compare existing chatmodes, instructions, prompts, and agents with the search results.
-6. Provide a structured response in a table format that includes the already exists, mode (chatmodes, instructions, prompts or agents), filename, title and description of each item found. Here's an example of the table format:
+2. Search all collections, instructions, prompts, and agents for the keyword provided.
+3. DO NOT load any collections, instructions, prompts, or agents from the MCP server until the user asks to do so.
+4. Scan local collections, instructions, prompts, and agents files in .github/collections, .github/instructions, .github/prompts, and .github/agents directories respectively.
+5. Compare existing collections, instructions, prompts, and agents with the search results.
+6. Provide a structured response in a table format that includes the already exists, mode (collections, instructions, prompts or agents), filename, title and description of each item found. Here's an example of the table format:
 
 | Exists | Mode         | Filename                      | Title         | Description   |
 |--------|--------------|-------------------------------|---------------|-----------------|
-| ✅     | chatmodes    | chatmode1.chatmode.md         | ChatMode 1    | Description 1 |
+| ✅     | collections  | awesome-collection.collection.yml | My Collection | Description 1 |
 | ❌     | instructions | instruction1.instructions.md  | Instruction 1 | Description 1 |
 | ✅     | prompts      | prompt1.prompt.md             | Prompt 1      | Description 1 |
 | ❌     | agents       | agent1.agent.md               | Agent 1       | Description 1 |
@@ -332,7 +375,7 @@ Here's the process to follow:
 ✅ indicates that the item already exists in this repository, while ❌ indicates that it does not.
 
 7. If any item doesn't exist in the repository, ask which item the user wants to save.
-8. If the user wants to save it, save the item in the appropriate directory (.github/chatmodes, .github/instructions, .github/prompts, or .github/agents) using the mode and filename, with NO modification.`,
+8. If the user wants to save it, save the item in the appropriate directory (.github/collections, .github/instructions, .github/prompts, or .github/agents) using the mode and filename, with NO modification.`,
           },
         },
       ],

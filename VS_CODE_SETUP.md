@@ -159,7 +159,7 @@ VS Code Insiders comes with built-in GitHub Copilot MCP integration. You can ref
 
 ### Tools Not Appearing
 
-- Make sure the bundle directory contains the `instructions/`, `prompts/`, `chatmodes/`, and `agents/` subdirectories
+- Make sure the bundle directory contains the `instructions/`, `prompts/`, `collections/`, and `agents/` subdirectories
 - Reload VS Code (Ctrl+R)
 - Check that the server is listed in the MCP panel
 

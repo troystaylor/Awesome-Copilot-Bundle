@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BUNDLE_ROOT = path.dirname(__dirname);
+const SOURCE_ROOT = path.join(BUNDLE_ROOT, 'awesome-copilot');
 
 // Create output stream
 const outputPath = path.join(BUNDLE_ROOT, 'awesome-copilot-1.0.0.mcpb');
@@ -53,11 +54,19 @@ archive.pipe(output);
 // Add build directory
 console.log('Creating bundle...');
 archive.directory(path.join(BUNDLE_ROOT, 'build'), 'build');
-archive.directory(path.join(BUNDLE_ROOT, 'instructions'), 'instructions');
-archive.directory(path.join(BUNDLE_ROOT, 'prompts'), 'prompts');
-archive.directory(path.join(BUNDLE_ROOT, 'chatmodes'), 'chatmodes');
-archive.directory(path.join(BUNDLE_ROOT, 'agents'), 'agents');
-archive.file(path.join(BUNDLE_ROOT, 'README-BUNDLE.md'), { name: 'README-BUNDLE.md' });
+const addDirectoryIfExists = (src, dest) => {
+  if (fs.existsSync(src)) {
+    archive.directory(src, dest);
+  } else {
+    console.warn(`Skipping missing directory: ${src}`);
+  }
+};
+
+addDirectoryIfExists(path.join(SOURCE_ROOT, 'instructions'), 'instructions');
+addDirectoryIfExists(path.join(SOURCE_ROOT, 'prompts'), 'prompts');
+addDirectoryIfExists(path.join(SOURCE_ROOT, 'collections'), 'collections');
+addDirectoryIfExists(path.join(SOURCE_ROOT, 'agents'), 'agents');
+archive.file(path.join(BUNDLE_ROOT, 'readme.md'), { name: 'README.md' });
 
 // Finalize the archive
 archive.finalize();

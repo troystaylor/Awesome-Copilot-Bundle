@@ -5,13 +5,13 @@ This is a portable MCP (Model Context Protocol) bundle that packages the entire 
 ## What's Included
 
 The bundle contains:
-- **129 Instructions** - Coding guidelines and best practices across multiple languages and frameworks
-- **115 Prompts** - Reusable prompt templates for common development tasks
-- **117 Chat Modes** - Specialized agent configurations for different development scenarios
-- **26 Agents** - Pre-configured AI agents for specific workflows
+- **145 Instructions** - Coding guidelines and best practices across multiple languages and frameworks
+- **125 Prompts** - Reusable prompt templates for common development tasks
+- **61 Collections** - Curated sets of related prompts, instructions, and agents
+- **118 Agents** - Pre-configured AI agents for specific workflows
 - **Documentation** - Full README files for all content types
 
-**Built:** November 24, 2025  
+**Built:** December 10, 2025  
 **Source Branch:** [main](https://github.com/github/awesome-copilot)
 
 ## Installation
@@ -98,7 +98,7 @@ If auto-installation doesn't work, add to your MCP config file:
 Once installed, you'll have access to these MCP tools:
 
 ### 1. `search_instructions`
-Search across all instructions, prompts, chatmodes, and agents by keywords.
+Search across all instructions, prompts, collections, and agents by keywords.
 
 **Example usage:**
 ```
@@ -167,7 +167,7 @@ mcpb-bundle/
 │   └── package-lock.json          # Dependency lock file
 ├── instructions/                  # All instruction files
 ├── prompts/                       # All prompt templates
-├── chatmodes/                     # All chat mode configs
+├── collections/                   # All collection definitions
 ├── agents/                        # All agent definitions
 ├── docs/                          # Documentation and READMEs
 └── README-BUNDLE.md               # This file
